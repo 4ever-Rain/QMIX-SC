@@ -63,23 +63,14 @@ class Agents:
             hidden_state = hidden_state.cuda()
 
         # get q value
-        if self.args.alg == 'maven':
-            maven_z = torch.tensor(maven_z, dtype=torch.float32).unsqueeze(0)
-            if self.args.cuda:
-                maven_z = maven_z.cuda()
-            q_value, self.policy.eval_hidden[:, agent_num, :] = self.policy.eval_rnn(inputs, hidden_state, maven_z)
-        else:
-            q_value, self.policy.eval_hidden[:, agent_num, :] = self.policy.eval_rnn(inputs, hidden_state)
+        q_value, self.policy.eval_hidden[:, agent_num, :] = self.policy.eval_rnn(inputs, hidden_state)
 
         # choose action from q value
-        if self.args.alg == 'coma' or self.args.alg == 'central_v' or self.args.alg == 'reinforce':
-            action = self._choose_action_from_softmax(q_value.cpu(), avail_actions, epsilon, evaluate)
+        q_value[avail_actions == 0.0] = - float("inf")
+        if np.random.uniform() < epsilon:
+            action = np.random.choice(avail_actions_ind)  # action是一个整数
         else:
-            q_value[avail_actions == 0.0] = - float("inf")
-            if np.random.uniform() < epsilon:
-                action = np.random.choice(avail_actions_ind)  # action是一个整数
-            else:
-                action = torch.argmax(q_value)
+            action = torch.argmax(q_value)
         return action
 
     def _choose_action_from_softmax(self, inputs, avail_actions, epsilon, evaluate=False):
@@ -172,6 +163,7 @@ class CommAgents:
             # 测试时直接选最大的
             action = torch.argmax(prob)
         else:
+            # 训练时使用概率采样得到动作
             action = Categorical(prob).sample().long()
         return action
 

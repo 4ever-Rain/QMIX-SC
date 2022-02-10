@@ -11,7 +11,7 @@ class QMIX:
         self.state_shape = args.state_shape
         self.obs_shape = args.obs_shape
         input_shape = self.obs_shape
-        # 根据参数决定RNN的输入维度
+        # 根据参数决定RNN的输入维度 3m地图，30个obs+7动作+3agent=40
         if args.last_action:
             input_shape += self.n_actions
         if args.reuse_network:
@@ -86,6 +86,7 @@ class QMIX:
         # 取每个agent动作对应的Q值，并且把最后不需要的一维去掉，因为最后一维只有一个值了
         q_evals = torch.gather(q_evals, dim=3, index=u).squeeze(3)
 
+        # 这一部分就是DQN的那个loss啥的
         # 得到target_q
         q_targets[avail_u_next == 0.0] = - 9999999
         q_targets = q_targets.max(dim=3)[0]
@@ -133,6 +134,7 @@ class QMIX:
             inputs_next.append(torch.eye(self.args.n_agents).unsqueeze(0).expand(episode_num, -1, -1))
         # 要把obs中的三个拼起来，并且要把episode_num个episode、self.args.n_agents个agent的数据拼成40条(40,96)的数据，
         # 因为这里所有agent共享一个神经网络，每条数据中带上了自己的编号，所以还是自己的数据
+        # 96是因为一个batch的数据是32 然后有个三个agent 即 96
         inputs = torch.cat([x.reshape(episode_num * self.args.n_agents, -1) for x in inputs], dim=1)
         inputs_next = torch.cat([x.reshape(episode_num * self.args.n_agents, -1) for x in inputs_next], dim=1)
         return inputs, inputs_next

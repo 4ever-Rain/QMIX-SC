@@ -37,15 +37,15 @@ class RolloutWorker:
         if self.args.epsilon_anneal_scale == 'episode':
             epsilon = epsilon - self.anneal_epsilon if epsilon > self.min_epsilon else epsilon
 
-        # sample z for maven
-        if self.args.alg == 'maven':
-            state = self.env.get_state()
-            state = torch.tensor(state, dtype=torch.float32)
-            if self.args.cuda:
-                state = state.cuda()
-            z_prob = self.agents.policy.z_policy(state)
-            maven_z = one_hot_categorical.OneHotCategorical(z_prob).sample()
-            maven_z = list(maven_z.cpu())
+        # # sample z for maven
+        # if self.args.alg == 'maven':
+        #     state = self.env.get_state()
+        #     state = torch.tensor(state, dtype=torch.float32)
+        #     if self.args.cuda:
+        #         state = state.cuda()
+        #     z_prob = self.agents.policy.z_policy(state)
+        #     maven_z = one_hot_categorical.OneHotCategorical(z_prob).sample()
+        #     maven_z = list(maven_z.cpu())
 
         while not terminated and step < self.episode_limit:
             # time.sleep(0.2)
@@ -100,7 +100,10 @@ class RolloutWorker:
         avail_u_next = avail_u[1:]
         avail_u = avail_u[:-1]
 
+        # ----------前面都是数据收集游戏对局数据
+
         # if step < self.episode_limit，padding
+        # 如果在规定时间之前打完整个对局，则全部用0填充。padde位赋值为1
         for i in range(step, self.episode_limit):
             o.append(np.zeros((self.n_agents, self.obs_shape)))
             u.append(np.zeros([self.n_agents, 1]))
@@ -126,13 +129,13 @@ class RolloutWorker:
                        padded=padded.copy(),
                        terminated=terminate.copy()
                        )
-        # add episode dim
+        # add episode dim 增加了一层维度
         for key in episode.keys():
             episode[key] = np.array([episode[key]])
         if not evaluate:
             self.epsilon = epsilon
-        if self.args.alg == 'maven':
-            episode['z'] = np.array([maven_z.copy()])
+        # if self.args.alg == 'maven':
+        #     episode['z'] = np.array([maven_z.copy()])
         if evaluate and episode_num == self.args.evaluate_epoch - 1 and self.args.replay_dir != '':
             self.env.save_replay()
             self.env.close()

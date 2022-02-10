@@ -10,13 +10,9 @@ class Runner:
     def __init__(self, env, args):
         self.env = env
 
-        if args.alg.find('commnet') > -1 or args.alg.find('g2anet') > -1:  # communication agent
-            self.agents = CommAgents(args)
-            self.rolloutWorker = CommRolloutWorker(env, self.agents, args)
-        else:  # no communication agent
-            self.agents = Agents(args)
-            self.rolloutWorker = RolloutWorker(env, self.agents, args)
-        if not args.evaluate and args.alg.find('coma') == -1 and args.alg.find('central_v') == -1 and args.alg.find('reinforce') == -1:  # these 3 algorithms are on-poliy
+        self.agents = Agents(args)
+        self.rolloutWorker = RolloutWorker(env, self.agents, args)
+        if not args.evaluate :
             self.buffer = ReplayBuffer(args)
         self.args = args
         self.win_rates = []
@@ -46,20 +42,23 @@ class Runner:
                 time_steps += steps
                 # print(_)
             # episode的每一项都是一个(1, episode_len, n_agents, 具体维度)四维数组，下面要把所有episode的的obs拼在一起
+            # 比如3m地图中 o.shape(1,60,3,30)有60的timestep 具体是30的维度； 具体的和buufer里面的的定义一模一样
             episode_batch = episodes[0]
             episodes.pop(0)
             for episode in episodes:
                 for key in episode_batch.keys():
                     episode_batch[key] = np.concatenate((episode_batch[key], episode[key]), axis=0)
-            if self.args.alg.find('coma') > -1 or self.args.alg.find('central_v') > -1 or self.args.alg.find('reinforce') > -1:
-                self.agents.train(episode_batch, train_steps, self.rolloutWorker.epsilon)
+            # if self.args.alg.find('coma') > -1 or self.args.alg.find('central_v') > -1 or self.args.alg.find('reinforce') > -1:
+            #     self.agents.train(episode_batch, train_steps, self.rolloutWorker.epsilon)
+            #     train_steps += 1
+            # else:
+            self.buffer.store_episode(episode_batch)
+            
+            # 训练循环一次 
+            for train_step in range(self.args.train_steps):
+                mini_batch = self.buffer.sample(min(self.buffer.current_size, self.args.batch_size))
+                self.agents.train(mini_batch, train_steps)
                 train_steps += 1
-            else:
-                self.buffer.store_episode(episode_batch)
-                for train_step in range(self.args.train_steps):
-                    mini_batch = self.buffer.sample(min(self.buffer.current_size, self.args.batch_size))
-                    self.agents.train(mini_batch, train_steps)
-                    train_steps += 1
         win_rate, episode_reward = self.evaluate()
         print('win_rate is ', win_rate)
         self.win_rates.append(win_rate)
