@@ -75,6 +75,7 @@ class QMIX:
         mask = 1 - batch["padded"].float()  # 用来把那些填充的经验的TD-error置0，从而不让它们影响到学习
 
         # 得到每个agent对应的Q值，维度为(episode个数, max_episode_len， n_agents， n_actions)
+        # FIXME：在这里把函数展开写 拉开。
         q_evals, q_targets = self.get_q_values(batch, max_episode_len)
         if self.args.cuda:
             s = s.cuda()
@@ -88,6 +89,7 @@ class QMIX:
 
         # 这一部分就是DQN的那个loss啥的
         # 得到target_q
+        # TODO：把这里的target使用imt进行计算 需要对动作状态加mask，第一行是对不合法动作加了mask 需要再加一行对于没有达到阈值要求的动作加mask
         q_targets[avail_u_next == 0.0] = - 9999999
         q_targets = q_targets.max(dim=3)[0]
 
