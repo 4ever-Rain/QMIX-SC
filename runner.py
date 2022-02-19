@@ -65,6 +65,8 @@ class Runner:
         self.episode_rewards.append(episode_reward)
         self.plt(num)
 
+        return win_rate, episode_reward
+
     def evaluate(self):
         win_number = 0
         episode_rewards = 0
