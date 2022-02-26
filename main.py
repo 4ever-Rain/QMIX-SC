@@ -9,7 +9,7 @@ import json
 if __name__ == '__main__':
     win_result_list = []
     episode_reward_list = []
-    train_nums = 3
+    train_nums = 1
     starttime = time.time()
     filename = (time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
     for i in range(train_nums):
@@ -39,13 +39,20 @@ if __name__ == '__main__':
         args.episode_limit = env_info["episode_limit"]
         runner = Runner(env, args)
 
-        if not args.evaluate:
+        if args.generate_buffer:
+            if not args.load_model:
+                raise Exception("No model load!")
+            win_rate, episode_reward = runner.generate_buffer()
+            print('The buffer win rate of {} is {}'.format(args.alg, win_rate))
+            print('The buffer episode reward of {} is  {}'.format(args.alg, episode_reward))
+        elif not args.evaluate:
             wr, er = runner.run(i)
             win_result_list.append(wr)
             episode_reward_list.append(er)
         else:
             win_rate, episode_reward = runner.evaluate()
-            print('The win rate of {} is  {}'.format(args.alg, win_rate))
+            print('The win rate of {} is {}'.format(args.alg, win_rate))
+            print('The episode reward of {} is {}'.format(args.alg, episode_reward))
             win_result_list.append(win_rate)
             episode_reward_list.append(episode_reward)
             break
@@ -55,11 +62,11 @@ if __name__ == '__main__':
     endtime = time.time()
     dtime = endtime - starttime
 
-    if not os.path.exists("/home/yuhan/SC2_result/config"):
-        os.makedirs("/home/yuhan/SC2_result/config")
-    filepath = "/home/yuhan/SC2_result/config/" + filename + ".txt"
+    if not os.path.exists("/home/ubuntu/SC2_result/config"):
+        os.makedirs("/home/ubuntu/SC2_result/config")
+    filepath = "/home/ubuntu/SC2_result/config/" + filename + ".txt"
     configlist = {
-        "start_time" : time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()),
+        "start_time" : filename,
         "end_time" : time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()),
         "running_time" : dtime,
         "train_nums" : train_nums,

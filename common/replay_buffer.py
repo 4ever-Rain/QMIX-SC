@@ -77,3 +77,16 @@ class ReplayBuffer:
         if inc == 1:
             idx = idx[0]
         return idx
+
+    def save(self, save_path):
+        np.save(save_path + f"/{self.args.map}_o.npy", self.buffers['o'][:self.size])
+        np.save(save_path + f"/{self.args.map}_u.npy", self.buffers['u'][:self.size])
+        np.save(save_path + f"/{self.args.map}_s.npy", self.buffers['s'][:self.size])
+        np.save(save_path + f"/{self.args.map}_r.npy", self.buffers['r'][:self.size])
+        np.save(save_path + f"/{self.args.map}_o_next.npy", self.buffers['o_next'][:self.size])
+        np.save(save_path + f"/{self.args.map}_s_next.npy", self.buffers['s_next'][:self.size])
+        np.save(save_path + f"/{self.args.map}_avail_u.npy", self.buffers['avail_u'][:self.size])
+        np.save(save_path + f"/{self.args.map}_avail_u_next.npy", self.buffers['avail_u_next'][:self.size])
+        np.save(save_path + f"/{self.args.map}_u_onehot.npy", self.buffers['u_onehot'][:self.size])
+        np.save(save_path + f"/{self.args.map}_padded.npy", self.buffers['padded'][:self.size])
+        np.save(save_path + f"/{self.args.map}_terminated.npy", self.buffers['terminated'][:self.size])

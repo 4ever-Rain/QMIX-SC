@@ -20,8 +20,11 @@ class Runner:
 
         # 用来保存plt和pkl
         self.save_path = self.args.result_dir + '/' + args.alg + '/' + args.map
+        self.buffer_path = self.save_path + '/buffer'
         if not os.path.exists(self.save_path):
             os.makedirs(self.save_path)
+        if not os.path.exists(self.buffer_path):
+            os.makedirs(self.buffer_path)
 
     def run(self, num):
         time_steps, train_steps, evaluate_steps = 0, 0, -1
@@ -76,6 +79,24 @@ class Runner:
             if win_tag:
                 win_number += 1
         return win_number / self.args.evaluate_epoch, episode_rewards / self.args.evaluate_epoch
+
+    def generate_buffer(self):
+        time_steps = 0
+        for _ in range(self.args.buffer_size):
+            episode, _, _, steps = self.rolloutWorker.generate_episode(evaluate=True)
+            time_steps += steps
+            self.buffer.store_episode(episode)
+            print('Run, time_steps {}'.format(time_steps))
+            print('Run, buffer_size {}'.format(self.buffer.current_size))
+            
+        self.buffer.save(self.buffer_path)
+        print("===============================")
+        print("Total buffer:", self.buffer.current_size)
+        print("Total time_steps:", time_steps)
+        print("Genrate buffer successfully!!")
+        print("===============================")
+        win_rate, episode_reward = self.evaluate()
+        return win_rate, episode_reward
 
     def plt(self, num):
         plt.figure()
