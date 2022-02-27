@@ -67,7 +67,10 @@ class Agents:
 
         # choose action from q value
         q_value[avail_actions == 0.0] = - float("inf")
-        if np.random.uniform() < epsilon:
+        # 生成buffer的时候使用low_noise 但是这期间使用evaluate模式，eps=0
+        if self.args.generate_buffer and np.random.uniform(0,1) < self.args.low_noise_p:
+            action = np.random.choice(avail_actions_ind)  # action是一个整数
+        elif np.random.uniform() < epsilon:
             action = np.random.choice(avail_actions_ind)  # action是一个整数
         else:
             action = torch.argmax(q_value)
