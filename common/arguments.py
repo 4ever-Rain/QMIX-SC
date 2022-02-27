@@ -36,7 +36,8 @@ def get_common_args():
     parser.add_argument('--generate_buffer', action="store_true", help='whether to generate buffer')
     parser.add_argument('--offline', action="store_true", help='whether to use offline algorithm')
     parser.add_argument('--buffer_size', type=int, default=5000, help='number of buffer size')
-    parser.add_argument("--low_noise_p", type=float, default=0.2, help="Probability of a low noise episode when generating buffer")  # 
+    parser.add_argument("--low_noise_p", type=float, default=0.2, help='Probability of a low noise episode when generating buffer')
+    parser.add_argument("--transformer", action="store_true", help='whether to use transformer instead of rnn')
     args = parser.parse_args()
     return args
 

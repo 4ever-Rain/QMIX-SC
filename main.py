@@ -26,6 +26,8 @@ if __name__ == '__main__':
             args = get_commnet_args(args)
         if args.alg.find('g2anet') > -1:
             args = get_g2anet_args(args)
+        if args.alg == 'qmix_t' and not args.transformer:
+            raise Exception("qmix_t must with transformer")
         env = StarCraft2Env(map_name=args.map,
                             step_mul=args.step_mul,
                             difficulty=args.difficulty,

@@ -37,6 +37,9 @@ class Agents:
         elif args.alg == 'reinforce':
             from policy.reinforce import Reinforce
             self.policy = Reinforce(args)
+        elif args.alg == 'qmix_t':
+            from policy.qmix_t import QMIX_T
+            self.policy = QMIX_T(args)
         else:
             raise Exception("No such algorithm")
         self.args = args
@@ -53,17 +56,22 @@ class Agents:
             inputs = np.hstack((inputs, last_action))
         if self.args.reuse_network:
             inputs = np.hstack((inputs, agent_id))
-        hidden_state = self.policy.eval_hidden[:, agent_num, :]
+        if not self.args.transformer:
+            hidden_state = self.policy.eval_hidden[:, agent_num, :]
 
         # transform the shape of inputs from (42,) to (1,42)
         inputs = torch.tensor(inputs, dtype=torch.float32).unsqueeze(0)
         avail_actions = torch.tensor(avail_actions, dtype=torch.float32).unsqueeze(0)
         if self.args.cuda:
             inputs = inputs.cuda()
-            hidden_state = hidden_state.cuda()
+            if not self.args.transformer:
+                hidden_state = hidden_state.cuda()
 
         # get q value
-        q_value, self.policy.eval_hidden[:, agent_num, :] = self.policy.eval_rnn(inputs, hidden_state)
+        if not self.args.transformer:
+            q_value, self.policy.eval_hidden[:, agent_num, :] = self.policy.eval_rnn(inputs, hidden_state)
+        else:
+            q_value = self.policy.eval_rnn(inputs)
 
         # choose action from q value
         q_value[avail_actions == 0.0] = - float("inf")
@@ -183,8 +191,14 @@ class CommAgents:
         inputs = torch.cat([x for x in inputs], dim=1)
         if self.args.cuda:
             inputs = inputs.cuda()
-            self.policy.eval_hidden = self.policy.eval_hidden.cuda()
-        weights, self.policy.eval_hidden = self.policy.eval_rnn(inputs, self.policy.eval_hidden)
+            if not self.args.transformer:
+                self.policy.eval_hidden = self.policy.eval_hidden.cuda()
+            else:
+                self.policy.po
+        if not self.args.transformer:
+            weights, self.policy.eval_hidden = self.policy.eval_rnn(inputs, self.policy.eval_hidden)
+        else:
+            weights = self.policy.eval_rnn(inputs)
         weights = weights.reshape(self.args.n_agents, self.args.n_actions)
         return weights.cpu()
 

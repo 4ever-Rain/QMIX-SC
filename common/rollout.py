@@ -30,7 +30,8 @@ class RolloutWorker:
         step = 0
         episode_reward = 0  # cumulative rewards
         last_action = np.zeros((self.args.n_agents, self.args.n_actions))
-        self.agents.policy.init_hidden(1)
+        if not self.args.transformer:
+            self.agents.policy.init_hidden(1)
 
         # epsilon
         epsilon = 0 if evaluate else self.epsilon
@@ -169,7 +170,8 @@ class CommRolloutWorker:
         step = 0
         episode_reward = 0
         last_action = np.zeros((self.args.n_agents, self.args.n_actions))
-        self.agents.policy.init_hidden(1)
+        if not self.args.transformer:
+            self.agents.policy.init_hidden(1)
         epsilon = 0 if evaluate else self.epsilon
         if self.args.epsilon_anneal_scale == 'episode':
             epsilon = epsilon - self.anneal_epsilon if epsilon > self.min_epsilon else epsilon
