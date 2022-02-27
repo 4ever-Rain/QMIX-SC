@@ -40,22 +40,33 @@ if __name__ == '__main__':
         runner = Runner(env, args)
 
         if args.generate_buffer:
+            # Generate buffer
             if not args.load_model:
                 raise Exception("No model load!")
+            print("================Genarate buffer==============")
             win_rate, episode_reward = runner.generate_buffer()
             print('The buffer win rate of {} is {}'.format(args.alg, win_rate))
             print('The buffer episode reward of {} is  {}'.format(args.alg, episode_reward))
+        elif args.alg == "off_qmix" and not args.evaluate:
+            # Offline alg
+            wr, er = runner.run_offline(i)
+            win_result_list.append(wr)
+            episode_reward_list.append(er)
         elif not args.evaluate:
+            # Online alg (normal)
             wr, er = runner.run(i)
             win_result_list.append(wr)
             episode_reward_list.append(er)
-        else:
+        elif args.evaluate:
+            # Evaluate
             win_rate, episode_reward = runner.evaluate()
             print('The win rate of {} is {}'.format(args.alg, win_rate))
             print('The episode reward of {} is {}'.format(args.alg, episode_reward))
             win_result_list.append(win_rate)
             episode_reward_list.append(episode_reward)
             break
+        else:
+            raise Exception("Error args! Not evl, not train online, not train offline!")
         env.close()
 
     # 记录所有的实验数据

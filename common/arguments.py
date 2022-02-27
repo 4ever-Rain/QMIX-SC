@@ -31,8 +31,10 @@ def get_common_args():
     parser.add_argument('--result_dir', type=str, default='./result', help='result directory of the policy')
     parser.add_argument('--load_model', type=bool, default=False, help='whether to load the pretrained model')
     parser.add_argument('--evaluate', type=bool, default=False, help='whether to evaluate the model')
-    parser.add_argument('--generate_buffer', action="store_true", help='whether to generate buffer')
     parser.add_argument('--cuda', type=bool, default=True, help='whether to use the GPU')
+    parser.add_argument('--generate_buffer', action="store_true", help='whether to generate buffer')
+    parser.add_argument('--offline', action="store_true", help='whether to use offline algorithm')
+    parser.add_argument('--buffer_size', type=int, default=5000, help='number of buffer size')
     args = parser.parse_args()
     return args
 
@@ -87,9 +89,7 @@ def get_mixer_args(args):
     args.train_steps = 1
 
     # experience replay
-    args.batch_size = 32
-    args.buffer_size = int(5e3)
-    # args.buffer_size = 50
+    args.batch_size = 32   
 
     # how often to save the model
     args.save_cycle = 5000

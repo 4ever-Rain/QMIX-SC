@@ -1,6 +1,9 @@
-**/__pycache__
+**/__pycache__/
 *.__pycache__
 *.pyc
 *.npy
 /result/
 /model/
+agent/__pycache__/*
+common/__pycache__/*
+network/__pycache__/*

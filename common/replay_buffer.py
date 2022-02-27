@@ -90,3 +90,25 @@ class ReplayBuffer:
         np.save(save_path + f"/{self.args.map}_u_onehot.npy", self.buffers['u_onehot'][:self.size])
         np.save(save_path + f"/{self.args.map}_padded.npy", self.buffers['padded'][:self.size])
         np.save(save_path + f"/{self.args.map}_terminated.npy", self.buffers['terminated'][:self.size])
+
+    def load(self, save_path, size=-1):
+        # Use the whole offlien dataset
+        self.buffers['o'] = np.load(save_path + f"/{self.args.map}_o.npy")
+        self.buffers['s'] = np.load(save_path + f"/{self.args.map}_s.npy")
+        self.buffers['r'] = np.load(save_path + f"/{self.args.map}_r.npy")
+        self.buffers['o_next'] = np.load(save_path + f"/{self.args.map}_o_next.npy")
+        self.buffers['s_next'] = np.load(save_path + f"/{self.args.map}_s_next.npy")
+        self.buffers['avail_u'] = np.load(save_path + f"/{self.args.map}_avail_u.npy")
+        self.buffers['avail_u_next'] = np.load(save_path + f"/{self.args.map}_avail_u_next.npy")
+        self.buffers['u_onehot'] = np.load(save_path + f"/{self.args.map}_u_onehot.npy")
+        self.buffers['padded'] = np.load(save_path + f"/{self.args.map}_padded.npy")
+        self.buffers['terminated'] = np.load(save_path + f"/{self.args.map}_terminated.npy")
+
+        self.current_idx = self.buffers['o'].shape[0]
+        self.current_size = self.buffers['o'].shape[0]
+
+        if self.current_idx != self.size:
+            print("Loadin buffer size is ", self.current_size)
+            print("Set buffer size is ", self.size)
+            raise Exception("Can not use custom buffer size now!")
+    

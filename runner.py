@@ -70,6 +70,33 @@ class Runner:
 
         return win_rate, episode_reward
 
+    def run_offline(self, num):
+        time_steps, train_steps, evaluate_steps = 0, 0, -1
+        # Load offline buffer
+        self.buffer.load(self.buffer_path)
+        while time_steps < self.args.n_steps:
+            print('Run {}, time_steps {}'.format(num, time_steps))
+            if time_steps // self.args.evaluate_cycle > evaluate_steps:
+                win_rate, episode_reward = self.evaluate()
+                # print('win_rate is ', win_rate)
+                self.win_rates.append(win_rate)
+                self.episode_rewards.append(episode_reward)
+                self.plt(num)
+                evaluate_steps += 1
+           
+            # 训练循环一次 
+            for train_step in range(self.args.train_steps):
+                mini_batch = self.buffer.sample(min(self.buffer.current_size, self.args.batch_size))
+                self.agents.train(mini_batch, train_steps)
+                train_steps += 1
+        win_rate, episode_reward = self.evaluate()
+        print('win_rate is ', win_rate)
+        self.win_rates.append(win_rate)
+        self.episode_rewards.append(episode_reward)
+        self.plt(num)
+
+        return win_rate, episode_reward
+
     def evaluate(self):
         win_number = 0
         episode_rewards = 0
