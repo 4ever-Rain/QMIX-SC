@@ -9,23 +9,31 @@ import json
 if __name__ == '__main__':
     win_result_list = []
     episode_reward_list = []
-    train_nums = 1
+
+    # get args
+    args = get_common_args()
+    if args.alg.find('coma') > -1:
+        args = get_coma_args(args)
+    elif args.alg.find('central_v') > -1:
+        args = get_centralv_args(args)
+    elif args.alg.find('reinforce') > -1:
+        args = get_reinforce_args(args)
+    else:
+        args = get_mixer_args(args)
+    if args.alg.find('commnet') > -1:
+        args = get_commnet_args(args)
+    if args.alg.find('g2anet') > -1:
+        args = get_g2anet_args(args)
+
+    if args.generate_buffer:
+        train_nums = 1
+    else:
+        train_nums = 3
+
     starttime = time.time()
     filename = (time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
+    
     for i in range(train_nums):
-        args = get_common_args()
-        if args.alg.find('coma') > -1:
-            args = get_coma_args(args)
-        elif args.alg.find('central_v') > -1:
-            args = get_centralv_args(args)
-        elif args.alg.find('reinforce') > -1:
-            args = get_reinforce_args(args)
-        else:
-            args = get_mixer_args(args)
-        if args.alg.find('commnet') > -1:
-            args = get_commnet_args(args)
-        if args.alg.find('g2anet') > -1:
-            args = get_g2anet_args(args)
         env = StarCraft2Env(map_name=args.map,
                             step_mul=args.step_mul,
                             difficulty=args.difficulty,
@@ -47,18 +55,21 @@ if __name__ == '__main__':
             win_rate, episode_reward = runner.generate_buffer()
             print('The buffer win rate of {} is {}'.format(args.alg, win_rate))
             print('The buffer episode reward of {} is  {}'.format(args.alg, episode_reward))
-        elif args.alg == "off_qmix" and not args.evaluate:
+        elif args.offline and not args.evaluate:
             # Offline alg
+            print("============ Using offline alg ===========")
             wr, er = runner.run_offline(i)
             win_result_list.append(wr)
             episode_reward_list.append(er)
         elif not args.evaluate:
             # Online alg (normal)
+            print("============ Using On-line alg ===========")
             wr, er = runner.run(i)
             win_result_list.append(wr)
             episode_reward_list.append(er)
         elif args.evaluate:
             # Evaluate
+            print("============ Evaluate ===========")
             win_rate, episode_reward = runner.evaluate()
             print('The win rate of {} is {}'.format(args.alg, win_rate))
             print('The episode reward of {} is {}'.format(args.alg, episode_reward))
