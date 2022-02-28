@@ -74,11 +74,12 @@ class Runner:
         time_steps, train_steps, evaluate_steps = 0, 0, -1
         # Load offline buffer
         self.buffer.load(self.buffer_path)
-        while time_steps < self.args.n_steps:
-            print('Run {}, time_steps {}'.format(num, time_steps))
-            if time_steps // self.args.evaluate_cycle > evaluate_steps:
+        while train_steps < self.args.train_epoch:
+            print('Run {}, train_steps {}'.format(num, train_steps))
+            if train_steps // 5 > evaluate_steps:
+                # 每5个epoch评估一次表现
                 win_rate, episode_reward = self.evaluate()
-                # print('win_rate is ', win_rate)
+                print('win_rate is ', win_rate)
                 self.win_rates.append(win_rate)
                 self.episode_rewards.append(episode_reward)
                 self.plt(num)

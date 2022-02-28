@@ -25,10 +25,8 @@ if __name__ == '__main__':
     if args.alg.find('g2anet') > -1:
         args = get_g2anet_args(args)
 
-    if args.generate_buffer:
-        train_nums = 1
-    else:
-        train_nums = 3
+
+    train_nums = 3
 
     starttime = time.time()
     filename = (time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
@@ -55,6 +53,7 @@ if __name__ == '__main__':
             win_rate, episode_reward = runner.generate_buffer()
             print('The buffer win rate of {} is {}'.format(args.alg, win_rate))
             print('The buffer episode reward of {} is  {}'.format(args.alg, episode_reward))
+            break
         elif args.offline and not args.evaluate:
             # Offline alg
             print("============ Using offline alg ===========")
