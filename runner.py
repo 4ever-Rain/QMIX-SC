@@ -28,9 +28,9 @@ class Runner:
 
     def run(self, num):
         time_steps, train_steps, evaluate_steps = 0, 0, -1
-        while time_steps < self.args.n_steps:
-            print('Run {}, time_steps {}'.format(num, time_steps))
-            if time_steps // self.args.evaluate_cycle > evaluate_steps:
+        while train_steps < self.args.train_epoch:
+            print('Run {}, train_steps {}'.format(num, train_steps))
+            if train_steps // 5 > evaluate_steps:
                 win_rate, episode_reward = self.evaluate()
                 # print('win_rate is ', win_rate)
                 self.win_rates.append(win_rate)
@@ -132,17 +132,22 @@ class Runner:
         plt.cla()
         plt.subplot(2, 1, 1)
         plt.plot(range(len(self.win_rates)), self.win_rates)
-        plt.xlabel('step*{}'.format(self.args.evaluate_cycle))
+        plt.xlabel('Epoch*5')
         plt.ylabel('win_rates')
 
         plt.subplot(2, 1, 2)
         plt.plot(range(len(self.episode_rewards)), self.episode_rewards)
-        plt.xlabel('step*{}'.format(self.args.evaluate_cycle))
+        plt.xlabel('Epoch*5')
         plt.ylabel('episode_rewards')
 
-        plt.savefig(self.save_path + '/plt_{}.png'.format(num), format='png')
-        np.save(self.save_path + '/win_rates_{}'.format(num), self.win_rates)
-        np.save(self.save_path + '/episode_rewards_{}'.format(num), self.episode_rewards)
+        if self.args.offline:
+            plt.savefig(self.save_path + '/off_plt_{}.png'.format(num), format='png')
+            np.save(self.save_path + '/off_win_rates_{}'.format(num), self.win_rates)
+            np.save(self.save_path + '/off_episode_rewards_{}'.format(num), self.episode_rewards)
+        else:
+            plt.savefig(self.save_path + '/plt_{}.png'.format(num), format='png')
+            np.save(self.save_path + '/win_rates_{}'.format(num), self.win_rates)
+            np.save(self.save_path + '/episode_rewards_{}'.format(num), self.episode_rewards)
         plt.close()
 
 
