@@ -37,6 +37,9 @@ class Agents:
         elif args.alg == 'reinforce':
             from policy.reinforce import Reinforce
             self.policy = Reinforce(args)
+        elif args.alg == 'mabcq':
+            from policy.mabcq import MABCQ
+            self.policy = MABCQ(args)
         else:
             raise Exception("No such algorithm")
         self.args = args
@@ -53,7 +56,11 @@ class Agents:
             inputs = np.hstack((inputs, last_action))
         if self.args.reuse_network:
             inputs = np.hstack((inputs, agent_id))
-        hidden_state = self.policy.eval_hidden[:, agent_num, :]
+        if self.args.alg=='mabcq':
+            hidden_state = self.policy.eval_hidden[:, agent_num, :]
+            hidden_state_i = self.policy.i_eval_hidden[:, agent_num, :]
+        else:
+            hidden_state = self.policy.eval_hidden[:, agent_num, :]
 
         # transform the shape of inputs from (42,) to (1,42)
         inputs = torch.tensor(inputs, dtype=torch.float32).unsqueeze(0)
@@ -61,9 +68,14 @@ class Agents:
         if self.args.cuda:
             inputs = inputs.cuda()
             hidden_state = hidden_state.cuda()
+            if self.args.alg=='mabcq':
+                hidden_state_i = hidden_state_i.cuda()
 
         # get q value
-        q_value, self.policy.eval_hidden[:, agent_num, :] = self.policy.eval_rnn(inputs, hidden_state)
+        if self.args.alg=='mabcq':
+            q_value, self.policy.eval_hidden[:, agent_num, :], _,  self.policy.i_eval_hidden[:, agent_num, :], imt= self.policy.eval_rnn(inputs, hidden_state, hidden_state_i)
+        else:
+            q_value, self.policy.eval_hidden[:, agent_num, :] = self.policy.eval_rnn(inputs, hidden_state)
 
         # choose action from q value
         q_value[avail_actions == 0.0] = - float("inf")
@@ -72,6 +84,12 @@ class Agents:
             action = np.random.choice(avail_actions_ind)  # action是一个整数
         elif np.random.uniform() < epsilon:
             action = np.random.choice(avail_actions_ind)  # action是一个整数
+        elif self.args.alg=='mabcq':
+            with torch.no_grad():
+                imt = imt.exp()
+                imt = (imt/imt.max(1, keepdim=True)[0] > self.args.BCQ_threshold).float()
+                # Use large negative number to mask actions from argmax
+                return int((imt * q_value + (1. - imt) * -1e8).argmax(1))
         else:
             action = torch.argmax(q_value)
         return action

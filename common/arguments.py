@@ -38,6 +38,8 @@ def get_common_args():
     parser.add_argument('--buffer_size', type=int, default=5000, help='number of buffer size')
     parser.add_argument("--low_noise_p", type=float, default=0.2, help="Probability of a low noise episode when generating buffer")
     parser.add_argument("--train_epoch", type=int, default=5000, help="total train epochs")
+    parser.add_argument("--BCQ_threshold", type=float, default=0.3, help="Threshold for 'unlikely' actions")
+    
     args = parser.parse_args()
     return args
 
