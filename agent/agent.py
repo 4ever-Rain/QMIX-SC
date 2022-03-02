@@ -78,7 +78,7 @@ class Agents:
             q_value, self.policy.eval_hidden[:, agent_num, :] = self.policy.eval_rnn(inputs, hidden_state)
 
         # choose action from q value
-        q_value[avail_actions == 0.0] = - float("inf")
+        q_value[avail_actions == 0.0] = -999999
         # 生成buffer的时候使用low_noise 但是这期间使用evaluate模式，eps=0
         if self.args.generate_buffer and np.random.uniform(0,1) < self.args.low_noise_p:
             action = np.random.choice(avail_actions_ind)  # action是一个整数
@@ -87,11 +87,17 @@ class Agents:
         elif self.args.alg=='mabcq':
             with torch.no_grad():
                 imt = imt.exp()
-                imt[avail_actions == 0.0] = - float("inf")
+                # imt[avail_actions == 0.0] = - float("inf")
+                imt[avail_actions == 0.0] = -999999
+                # print(imt)
                 imt = (imt/imt.max(1, keepdim=True)[0] > self.args.BCQ_threshold).float()
+                # print(imt)
+                # print((imt * q_value + (1 - imt) * -1e8).argmax(1, keepdim=True))
+                # print(imt* q_value)
                 # Use large negative number to mask actions from argmax
-                act = np.nanargmax((imt * q_value + (1. - imt) * -1e8).cpu().numpy())
-                return act
+                # act = np.nanargmax((imt * q_value + (1. - imt) * -1e8).cpu().numpy())
+                # print(act)
+                return int((imt * q_value + (1. - imt) * -1e8).argmax(1))
         else:
             action = torch.argmax(q_value)
         return action

@@ -30,7 +30,7 @@ class Runner:
         time_steps, train_steps, evaluate_steps = 0, 0, -1
         while train_steps < self.args.train_epoch:
             print('Run {}, train_steps {}'.format(num, train_steps))
-            if train_steps // 5 > evaluate_steps:
+            if train_steps // self.args.evaluate_frq > evaluate_steps:
                 win_rate, episode_reward = self.evaluate()
                 # print('win_rate is ', win_rate)
                 self.win_rates.append(win_rate)
@@ -71,12 +71,12 @@ class Runner:
         return win_rate, episode_reward
 
     def run_offline(self, num):
-        time_steps, train_steps, evaluate_steps = 0, 0, -1
+        time_steps, train_steps, evaluate_steps = 0, 0, 0
         # Load offline buffer
         self.buffer.load(self.buffer_path)
         while train_steps < self.args.train_epoch:
             print('Run {}, train_steps {}'.format(num, train_steps))
-            if train_steps // 5 > evaluate_steps:
+            if train_steps // self.args.evaluate_frq > evaluate_steps:
                 # 每5个epoch评估一次表现
                 win_rate, episode_reward = self.evaluate()
                 print('win_rate is ', win_rate)
@@ -132,12 +132,12 @@ class Runner:
         plt.cla()
         plt.subplot(2, 1, 1)
         plt.plot(range(len(self.win_rates)), self.win_rates)
-        plt.xlabel('Epoch*5')
+        plt.xlabel('Epoch*{}'.format(self.args.evaluate_frq))
         plt.ylabel('win_rates')
 
         plt.subplot(2, 1, 2)
         plt.plot(range(len(self.episode_rewards)), self.episode_rewards)
-        plt.xlabel('Epoch*5')
+        plt.xlabel('Epoch*{}'.format(self.args.evaluate_frq))
         plt.ylabel('episode_rewards')
 
         if self.args.offline:
