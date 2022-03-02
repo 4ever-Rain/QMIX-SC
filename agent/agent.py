@@ -87,9 +87,11 @@ class Agents:
         elif self.args.alg=='mabcq':
             with torch.no_grad():
                 imt = imt.exp()
+                imt[avail_actions == 0.0] = - float("inf")
                 imt = (imt/imt.max(1, keepdim=True)[0] > self.args.BCQ_threshold).float()
                 # Use large negative number to mask actions from argmax
-                return int((imt * q_value + (1. - imt) * -1e8).argmax(1))
+                act = np.nanargmax((imt * q_value + (1. - imt) * -1e8).cpu().numpy())
+                return act
         else:
             action = torch.argmax(q_value)
         return action

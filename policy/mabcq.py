@@ -90,14 +90,16 @@ class MABCQ:
             s_next = s_next.cuda()
             terminated = terminated.cuda()
             mask = mask.cuda()
+            avail_u_next = avail_u_next.cuda()
 
         imt = imt_normal
         # 这一部分就是DQN的那个loss啥的
         # 得到target_q
         # TODO：把这里的target使用imt进行计算 需要对动作状态加mask，第一行是对不合法动作加了mask 需要再加一行对于没有达到阈值要求的动作加mask
         with torch.no_grad():
-            q_targets[avail_u_next == 0.0] = - 9999999
+            q_evals[avail_u_next == 0.0] = - 9999999
             imt = imt.exp()
+            imt[avail_u_next == 0.0] = - 9999999
             imt = (imt/imt.max(3, keepdim=True)[0] > self.threshold).float()
 
             # Use large negative number to mask actions from argmax
@@ -119,7 +121,11 @@ class MABCQ:
         # print(i_loss)
 
         # 不能直接用mean，因为还有许多经验是没用的，所以要求和再比真实的经验数，才是真正的均值
-        loss = (masked_td_error ** 2).sum() / mask.sum()
+        q_loss = (masked_td_error ** 2).sum() / mask.sum()
+        # print("i", i_loss)
+        # print("q", q_loss)
+        # print("reg", i.pow(2).mean())
+        loss = q_loss + i_loss * 100+ 1e-2 * i.pow(2).mean()
         # print(loss)
         self.optimizer.zero_grad()
         loss.backward()
