@@ -226,6 +226,7 @@ class MABCQ:
         # 把该列表转化成(episode个数, max_episode_len， n_agents，n_actions)的数组
         q_evals = torch.stack(q_evals, dim=1)
         q_targets = torch.stack(q_targets, dim=1)
+        i_loss = i_loss / max_episode_len
         # imts= torch.stack(imts, dim=1)
         # i_s= torch.stack(i_s, dim=1)
         return q_evals, q_targets, i_loss
@@ -241,5 +242,5 @@ class MABCQ:
         num = str(train_step // self.args.save_cycle)
         if not os.path.exists(self.model_dir):
             os.makedirs(self.model_dir)
-        torch.save(self.eval_qmix_net.state_dict(), self.model_dir + '/' + num + '_qmix_net_params.pkl')
+        torch.save(self.eval_qmix_net.state_dict(), self.model_dir + '/' + num + '_mabcq_net_params.pkl')
         torch.save(self.eval_rnn.state_dict(),  self.model_dir + '/' + num + '_rnn_net_params.pkl')
