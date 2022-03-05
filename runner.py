@@ -71,7 +71,7 @@ class Runner:
         return win_rate, episode_reward
 
     def run_offline(self, num):
-        time_steps, train_steps, evaluate_steps = 0, 0, 0
+        time_steps, train_steps, evaluate_steps = 0, 0, -1
         # Load offline buffer
         self.buffer.load(self.buffer_path)
         while train_steps < self.args.train_epoch:

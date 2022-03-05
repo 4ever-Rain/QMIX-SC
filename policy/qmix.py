@@ -2,6 +2,8 @@ import torch
 import os
 from network.base_net import RNN
 from network.qmix_net import QMixNet
+from torch.utils.tensorboard import SummaryWriter
+import time
 
 
 class QMIX:
@@ -55,6 +57,10 @@ class QMIX:
         self.target_hidden = None
         print('Init alg QMIX')
 
+        filename = (time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
+        self.writer = SummaryWriter(self.args.result_dir + '/' + args.alg + '/' + args.map + '/logs_' + filename)
+        self.writer.add_text("args", str(args))
+
     def learn(self, batch, max_episode_len, train_step, epsilon=None):  # train_step表示是第几次学习，用来控制更新target_net网络的参数
         '''
         在learn的时候，抽取到的数据是四维的，四个维度分别为 1——第几个episode 2——episode中第几个transition
@@ -96,6 +102,9 @@ class QMIX:
         q_total_eval = self.eval_qmix_net(q_evals, s)
         q_total_target = self.target_qmix_net(q_targets, s_next)
 
+        q_evals_out = (q_total_eval * mask).sum() / mask.sum()
+        self.writer.add_scalar('q_evals_out', q_evals_out, global_step=train_step)
+
         targets = r + self.args.gamma * q_total_target * (1 - terminated)
 
         td_error = (q_total_eval - targets.detach())
@@ -103,6 +112,9 @@ class QMIX:
 
         # 不能直接用mean，因为还有许多经验是没用的，所以要求和再比真实的经验数，才是真正的均值
         loss = (masked_td_error ** 2).sum() / mask.sum()
+
+        self.writer.add_scalar('q_loss', loss, global_step=train_step)
+        
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.eval_parameters, self.args.grad_norm_clip)
