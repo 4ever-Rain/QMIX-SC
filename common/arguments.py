@@ -24,7 +24,7 @@ def get_common_args():
     parser.add_argument('--last_action', type=bool, default=True, help='whether to use the last action to choose action')
     parser.add_argument('--reuse_network', type=bool, default=True, help='whether to use one network for all agents')
     parser.add_argument('--gamma', type=float, default=0.99, help='discount factor')
-    parser.add_argument('--optimizer', type=str, default="RMS", help='optimizer')
+    parser.add_argument('--optimizer', type=str, default="Adam", help='optimizer')
     parser.add_argument('--evaluate_cycle', type=int, default=5000, help='how often to evaluate the model')
     parser.add_argument('--evaluate_epoch', type=int, default=32, help='number of the epoch to evaluate the agent')
     parser.add_argument('--model_dir', type=str, default='./model', help='model directory of the policy')
@@ -37,9 +37,10 @@ def get_common_args():
     parser.add_argument('--offline', action="store_true", help='whether to use offline algorithm')
     parser.add_argument('--buffer_size', type=int, default=5000, help='number of buffer size')
     parser.add_argument("--low_noise_p", type=float, default=0.2, help="Probability of a low noise episode when generating buffer")
-    parser.add_argument("--train_epoch", type=int, default=5000, help="total train epochs")
+    parser.add_argument("--train_epoch", type=int, default=50000, help="total train epochs")
     parser.add_argument("--BCQ_threshold", type=float, default=0.3, help="Threshold for 'unlikely' actions")
     parser.add_argument('--evaluate_frq', type=int, default=500, help='number of the epoch to evaluate the agent')
+    parser.add_argument('--buffer_with_run', action="store_true", help='generate buffer during run')
     args = parser.parse_args()
     return args
 

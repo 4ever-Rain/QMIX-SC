@@ -25,6 +25,9 @@ class Runner:
             os.makedirs(self.save_path)
         if not os.path.exists(self.buffer_path):
             os.makedirs(self.buffer_path)
+        if self.args.buffer_with_run:
+            if not os.path.exists(self.save_path + '/buffer_run'):
+                os.makedirs(self.save_path + '/buffer_run')
 
     def run(self, num):
         time_steps, train_steps, evaluate_steps = 0, 0, -1
@@ -62,6 +65,8 @@ class Runner:
                 mini_batch = self.buffer.sample(min(self.buffer.current_size, self.args.batch_size))
                 self.agents.train(mini_batch, train_steps)
                 train_steps += 1
+        if self.args.buffer_with_run:
+            self.buffer.save(self.save_path + '/buffer_run')
         win_rate, episode_reward = self.evaluate()
         print('win_rate is ', win_rate)
         self.win_rates.append(win_rate)
