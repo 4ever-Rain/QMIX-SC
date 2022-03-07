@@ -41,6 +41,7 @@ def get_common_args():
     parser.add_argument("--BCQ_threshold", type=float, default=0.3, help="Threshold for 'unlikely' actions")
     parser.add_argument('--evaluate_frq', type=int, default=500, help='number of the epoch to evaluate the agent')
     parser.add_argument('--buffer_with_run', action="store_true", help='generate buffer during run')
+    parser.add_argument('--train_no', type=int, default=0, help='number of train num')
     args = parser.parse_args()
     return args
 
@@ -82,7 +83,7 @@ def get_mixer_args(args):
     args.two_hyper_layers = False
     args.hyper_hidden_dim = 64
     args.qtran_hidden_dim = 64
-    args.lr = 5e-4
+    args.lr = 3e-4
 
     # epsilon greedy
     args.epsilon = 1
@@ -98,7 +99,7 @@ def get_mixer_args(args):
     args.batch_size = 32   
 
     # how often to save the model
-    args.save_cycle = 5000
+    args.save_cycle = 200
 
     # how often to update the target_net
     args.target_update_cycle = 200

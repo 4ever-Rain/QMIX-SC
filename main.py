@@ -26,12 +26,12 @@ if __name__ == '__main__':
         args = get_g2anet_args(args)
 
 
-    train_nums = 3
+    train_nums = 1
 
     starttime = time.time()
     filename = (time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime()))
     
-    for i in range(train_nums):
+    for _ in range(train_nums):
         env = StarCraft2Env(map_name=args.map,
                             step_mul=args.step_mul,
                             difficulty=args.difficulty,
@@ -57,13 +57,13 @@ if __name__ == '__main__':
         elif args.offline and not args.evaluate:
             # Offline alg
             print("============ Using offline alg ===========")
-            wr, er = runner.run_offline(i)
+            wr, er = runner.run_offline(args.train_no)
             win_result_list.append(wr)
             episode_reward_list.append(er)
         elif not args.evaluate:
             # Online alg (normal)
             print("============ Using On-line alg ===========")
-            wr, er = runner.run(i)
+            wr, er = runner.run(args.train_no)
             win_result_list.append(wr)
             episode_reward_list.append(er)
         elif args.evaluate:
