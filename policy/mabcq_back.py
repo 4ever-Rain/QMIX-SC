@@ -90,7 +90,7 @@ class MABCQ:
 
         # 得到每个agent对应的Q值，维度为(episode个数, max_episode_len， n_agents， n_actions)
         # FIXME：在这里把函数展开写 拉开。
-        q_evals, q_targets, imt_normal, i = self.get_q_values(batch, max_episode_len)
+        q_evals, q_targets, i_loss= self.get_q_values(batch, max_episode_len)
         if self.args.cuda:
             s = s.cuda()
             u = u.cuda()
@@ -100,42 +100,28 @@ class MABCQ:
             mask = mask.cuda()
             avail_u_next = avail_u_next.cuda()
 
-        
-
-        imt = imt_normal
+        # imt = imt_normal
         # 这一部分就是DQN的那个loss啥的
         # 得到target_q
         # TODO：把这里的target使用imt进行计算 需要对动作状态加mask，第一行是对不合法动作加了mask 需要再加一行对于没有达到阈值要求的动作加mask
-        with torch.no_grad():
-            ## new
-            epsilon = torch.ones_like(imt.max(-1, keepdim=True)[0]) * 0.0001
-            imt = imt.exp()
-            imt = (imt/imt.max(-1, keepdim=True)[0] + epsilon > 0.9).float()
+        # with torch.no_grad():
+        #     q_evals[avail_u_next == 0.0] = - 9999999
+        #     imt = imt.exp()
+        #     imt[avail_u_next == 0.0] = - 9999999
+        #     imt = (imt/imt.max(3, keepdim=True)[0] > self.threshold).float()
 
-            next_action = (imt * q_evals + (1 - imt) * -1e8)
-            next_action[avail_u_next == 0.0] = -9999999
-            next_action = next_action.argmax(-1, keepdim=True)
-            q_targets = torch.gather(q_targets, dim=3, index=next_action).squeeze(3)
-
-
-            # q_evals[avail_u_next == 0.0] = - 9999999
-            # imt = imt.exp()
-            # imt[avail_u_next == 0.0] = - 9999999
-            # imt = (imt/imt.max(3, keepdim=True)[0] > self.threshold).float()
-
-            # # Use large negative number to mask actions from argmax
-            # next_action = (imt * q_evals + (1 - imt) * -1e8).argmax(3, keepdim=True)
-            # q_targets = torch.gather(q_targets, dim=3, index=next_action).squeeze(3)
-
+        #     # Use large negative number to mask actions from argmax
+        #     next_action = (imt * q_evals + (1 - imt) * -1e8).argmax(3, keepdim=True)
+        #     q_targets = torch.gather(q_targets, dim=3, index=next_action).squeeze(3)
             
         # 取每个agent动作对应的Q值，并且把最后不需要的一维去掉，因为最后一维只有一个值了
         q_evals = torch.gather(q_evals, dim=3, index=u).squeeze(3)
-        # q_targets = q_targets.squeeze(3)
+        q_targets = q_targets.squeeze(3)
         q_total_eval = self.eval_qmix_net(q_evals, s)
         q_total_target = self.target_qmix_net(q_targets, s_next)
 
-        # q_evals_out = (q_total_eval * mask).sum() / mask.sum()
-        # self.writer.add_scalar('q_evals_out', q_evals_out, global_step=train_step)
+        q_evals_out = (q_total_eval * mask).sum() / mask.sum()
+        self.writer.add_scalar('q_evals_out', q_evals_out, global_step=train_step)
 
         targets = r + self.args.gamma * q_total_target * (1 - terminated)
 
@@ -146,11 +132,10 @@ class MABCQ:
 
         # 不能直接用mean，因为还有许多经验是没用的，所以要求和再比真实的经验数，才是真正的均值
         q_loss = (masked_td_error ** 2).sum() / mask.sum()
-        i_loss = F.nll_loss(imt_normal.reshape(-1, imt_normal.shape[3]), u.reshape(-1))
         # print("i", i_loss)
         # print("q", q_loss)
         # print("reg", i.pow(2).mean())
-        loss = q_loss + i_loss + i.pow(2).mean()
+        loss = q_loss + i_loss
         self.writer.add_scalar('i_loss', i_loss, global_step=train_step)
         self.writer.add_scalar('q_loss', q_loss, global_step=train_step)
         self.writer.add_scalar('Total_loss', loss, global_step=train_step)
@@ -196,7 +181,7 @@ class MABCQ:
     def get_q_values(self, batch, max_episode_len):
         episode_num = batch['o'].shape[0]
         q_evals, q_targets = [], []
-        imts, i_s = [], []
+        # imts, i_s = [], []
         i_loss = 0
         u, avail_u_next = batch['u'], batch['avail_u_next']
         for transition_idx in range(max_episode_len):
@@ -212,43 +197,42 @@ class MABCQ:
                 avail_u_next = avail_u_next.cuda()
 
             # 修改q_target的计算方式，并且 使用两个q的方法
-            # with torch.no_grad():
-            #     q_eval, self.eval_hidden, _, self.i_eval_hidden, imt = self.eval_rnn(inputs, self.eval_hidden, self.i_eval_hidden)  # inputs维度为(40,96)，得到的q_eval维度为(40,n_actions)
-            #     imt = imt.exp()
-            #     u_mask = (avail_u_next[:,transition_idx] == 0.0).view(episode_num * self.n_agents, -1)
-            #     # imt[u_mask] = - 9999999
-            #     q_eval[u_mask] = -9999999
+            with torch.no_grad():
+                q_eval, self.eval_hidden, _, self.i_eval_hidden, imt = self.eval_rnn(inputs, self.eval_hidden, self.i_eval_hidden)  # inputs维度为(40,96)，得到的q_eval维度为(40,n_actions)
+                imt = imt.exp()
+                u_mask = (avail_u_next[:,transition_idx] == 0.0).view(episode_num * self.n_agents, -1)
+                # imt[u_mask] = - 9999999
+                q_eval[u_mask] = -9999999
 
-            #     imt = (imt/imt.max(1, keepdim=True)[0] > self.threshold).float()
-            #     # Use large negative number to mask actions from argmax
-            #     next_action = (imt * q_eval + (1 - imt) * -1e8).argmax(1, keepdim=True)
-            #     q_target, self.q_target_hidden , _, self.i_target_hidden, _= self.target_rnn(inputs_next, self.q_target_hidden, self.i_target_hidden)
+                imt = (imt/imt.max(1, keepdim=True)[0] > self.threshold).float()
+                # Use large negative number to mask actions from argmax
+                next_action = (imt * q_eval + (1 - imt) * -1e8).argmax(1, keepdim=True)
+                q_target, self.q_target_hidden , _, self.i_target_hidden, _= self.target_rnn(inputs_next, self.q_target_hidden, self.i_target_hidden)
                 
-            #     q_target = q_target.gather(1, next_action)
+                q_target = q_target.gather(1, next_action)
             
              
                 
 
             q_eval, self.eval_hidden, i, self.i_eval_hidden, imt = self.eval_rnn(inputs, self.eval_hidden, self.i_eval_hidden)  # inputs维度为(40,96)，得到的q_eval维度为(40,n_actions)
-            q_target, self.q_target_hidden , _, self.i_target_hidden, _= self.target_rnn(inputs_next, self.q_target_hidden, self.i_target_hidden)
-            # i_loss += F.nll_loss(imt,u[:,transition_idx].reshape(-1)) + 1e-2 * i.pow(2).mean()
+            i_loss += F.nll_loss(imt,u[:,transition_idx].reshape(-1)) + 1e-2 * i.pow(2).mean()
             # 把q_eval维度重新变回(8, 5,n_actions)
             q_eval = q_eval.view(episode_num, self.n_agents, -1)
             q_target = q_target.view(episode_num, self.n_agents, -1)
             imt = imt.view(episode_num, self.n_agents, -1)
-            i = i.view(episode_num, self.n_agents, -1)
+            # i = i.view(episode_num, self.n_agents, -1)
             q_evals.append(q_eval)
             q_targets.append(q_target)
-            imts.append(imt)
-            i_s.append(i)
+            # imts.append(imt)
+            # i_s.append(i)
         # 得的q_eval和q_target是一个列表，列表里装着max_episode_len个数组，数组的的维度是(episode个数, n_agents，n_actions)
         # 把该列表转化成(episode个数, max_episode_len， n_agents，n_actions)的数组
         q_evals = torch.stack(q_evals, dim=1)
         q_targets = torch.stack(q_targets, dim=1)
-        # i_loss = i_loss / max_episode_len
-        imts= torch.stack(imts, dim=1)
-        i_s= torch.stack(i_s, dim=1)
-        return q_evals, q_targets, imts, i_s
+        i_loss = i_loss / max_episode_len
+        # imts= torch.stack(imts, dim=1)
+        # i_s= torch.stack(i_s, dim=1)
+        return q_evals, q_targets, i_loss
 
     def init_hidden(self, episode_num):
         # 为每个episode中的每个agent都初始化一个eval_hidden、target_hidden
