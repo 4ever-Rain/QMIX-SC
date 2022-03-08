@@ -2,6 +2,7 @@ import torch
 import os
 from network.base_net import BCRNN
 from network.qmix_net import QMixNet
+from network.maqmix_net import MAQMixNet
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 import time
@@ -23,8 +24,8 @@ class MABCQ:
         # 神经网络
         self.eval_rnn = BCRNN(input_shape, args)  # 每个agent选动作的网络
         self.target_rnn = BCRNN(input_shape, args)
-        self.eval_qmix_net = QMixNet(args)  # 把agentsQ值加起来的网络
-        self.target_qmix_net = QMixNet(args)
+        self.eval_qmix_net = MAQMixNet(args)  # 把agentsQ值加起来的网络
+        self.target_qmix_net = MAQMixNet(args)
         self.args = args
         if self.args.cuda:
             self.eval_rnn.cuda()

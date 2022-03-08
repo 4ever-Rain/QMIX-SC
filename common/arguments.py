@@ -10,7 +10,7 @@ def get_common_args():
     parser = argparse.ArgumentParser()
     # the environment setting
     parser.add_argument('--difficulty', type=str, default='7', help='the difficulty of the game')
-    parser.add_argument('--game_version', type=str, default='latest', help='the version of the game')
+    parser.add_argument('--game_version', type=str, default='4.6.2', help='the version of the game')
     parser.add_argument('--map', type=str, default='5m_vs_6m', help='the map of the game')
     parser.add_argument('--seed', type=int, default=123, help='random seed')
     parser.add_argument('--step_mul', type=int, default=8, help='how many steps to make an action')
@@ -83,7 +83,7 @@ def get_mixer_args(args):
     args.two_hyper_layers = False
     args.hyper_hidden_dim = 64
     args.qtran_hidden_dim = 64
-    args.lr = 3e-4
+    args.lr = 1e-4
 
     # epsilon greedy
     args.epsilon = 1
@@ -96,20 +96,20 @@ def get_mixer_args(args):
     args.train_steps = 1
 
     # experience replay
-    args.batch_size = 32   
+    args.batch_size = 16 
 
     # how often to save the model
-    args.save_cycle = 200
+    args.save_cycle = 1000
 
     # how often to update the target_net
-    args.target_update_cycle = 200
+    args.target_update_cycle = 600
 
     # QTRAN lambda
     args.lambda_opt = 1
     args.lambda_nopt = 1
 
     # prevent gradient explosion
-    args.grad_norm_clip = 10
+    args.grad_norm_clip = 20
 
     # MAVEN
     args.noise_dim = 16
