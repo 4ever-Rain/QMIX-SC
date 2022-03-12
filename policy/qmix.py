@@ -30,7 +30,15 @@ class QMIX:
             self.target_rnn.cuda()
             self.eval_qmix_net.cuda()
             self.target_qmix_net.cuda()
-        self.model_dir = args.model_dir + '/' + args.alg + '/' + args.map
+        if self.args.model_path == "Default":
+            self.model_dir = args.model_dir + '/' + args.alg + '/' + args.map
+        else:
+            self.model_dir = args.model_path
+
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir)
+
+        print(self.model_dir)
         # 如果存在模型则加载模型
         if self.args.load_model:
             if os.path.exists(self.model_dir + '/rnn_net_params.pkl'):

@@ -20,7 +20,12 @@ class Runner:
 
         # 用来保存plt和pkl
         self.save_path = self.args.result_dir + '/' + args.alg + '/' + args.map
-        self.buffer_path = self.save_path + '/buffer'
+
+        if self.args.buffer_path == "Default":
+            self.buffer_path = self.args.result_dir + '/' + args.alg + '/' + args.map + '/buffer/'
+        else:
+            self.buffer_path = self.args.buffer_path
+
         if not os.path.exists(self.save_path):
             os.makedirs(self.save_path)
         if not os.path.exists(self.buffer_path):

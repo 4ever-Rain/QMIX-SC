@@ -36,12 +36,17 @@ def get_common_args():
     parser.add_argument('--generate_buffer', action="store_true", help='whether to generate buffer')
     parser.add_argument('--offline', action="store_true", help='whether to use offline algorithm')
     parser.add_argument('--buffer_size', type=int, default=5000, help='number of buffer size')
-    parser.add_argument("--low_noise_p", type=float, default=0.2, help="Probability of a low noise episode when generating buffer")
+    parser.add_argument("--low_noise_p", type=float, default=0, help="Probability of a low noise episode when generating buffer")
     parser.add_argument("--train_epoch", type=int, default=50000, help="total train epochs")
     parser.add_argument("--BCQ_threshold", type=float, default=0.3, help="Threshold for 'unlikely' actions")
     parser.add_argument('--evaluate_frq', type=int, default=500, help='number of the epoch to evaluate the agent')
     parser.add_argument('--buffer_with_run', action="store_true", help='generate buffer during run')
     parser.add_argument('--train_no', type=int, default=0, help='number of train num')
+    parser.add_argument('--save_path', type=str, default="Default", help='save path')
+    parser.add_argument('--model_path', type=str, default="Default", help='model path')
+    parser.add_argument('--buffer_path', type=str, default="Default", help='buffer path')
+    parser.add_argument('--save_cycle', type=int, default=5000, help='how often to save the model')
+
     args = parser.parse_args()
     return args
 
@@ -98,11 +103,8 @@ def get_mixer_args(args):
     # experience replay
     args.batch_size = 16 
 
-    # how often to save the model
-    args.save_cycle = 1000
-
     # how often to update the target_net
-    args.target_update_cycle = 600
+    args.target_update_cycle = 200
 
     # QTRAN lambda
     args.lambda_opt = 1
