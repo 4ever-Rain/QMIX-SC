@@ -97,7 +97,7 @@ class Agents:
             with torch.no_grad():
                 imt = imt.exp()
                 # imt[avail_actions == 0.0] = - float("inf")
-                # imt[avail_actions == 0.0] = -999999
+                imt[avail_actions == 0.0] = -999999
                 # print(imt)
                 imt = (imt/imt.max(1, keepdim=True)[0] > self.args.BCQ_threshold).float()
                 # print(imt)
