@@ -40,6 +40,9 @@ class Agents:
         elif args.alg == 'mabcq':
             from policy.mabcq import MABCQ
             self.policy = MABCQ(args)
+        elif args.alg == 'mabcqt':
+            from policy.mabcqt import MABCQT
+            self.policy = MABCQT(args)
         else:
             raise Exception("No such algorithm")
         self.args = args
@@ -59,7 +62,7 @@ class Agents:
         if self.args.alg=='mabcq':
             hidden_state = self.policy.eval_hidden[:, agent_num, :]
             hidden_state_i = self.policy.i_eval_hidden[:, agent_num, :]
-        else:
+        elif self.args.alg !='mabcqt':
             hidden_state = self.policy.eval_hidden[:, agent_num, :]
 
         # transform the shape of inputs from (42,) to (1,42)
@@ -67,15 +70,21 @@ class Agents:
         avail_actions = torch.tensor(avail_actions, dtype=torch.float32).unsqueeze(0)
         if self.args.cuda:
             inputs = inputs.cuda()
-            hidden_state = hidden_state.cuda()
+            if self.args.alg !='mabcqt':
+                hidden_state = hidden_state.cuda()
             if self.args.alg=='mabcq':
                 hidden_state_i = hidden_state_i.cuda()
 
         # get q value
         if self.args.alg=='mabcq':
-            q_value, self.policy.eval_hidden[:, agent_num, :], _,  self.policy.i_eval_hidden[:, agent_num, :], imt= self.policy.eval_rnn(inputs, hidden_state, hidden_state_i)
-        else:
+            q_value, self.policy.eval_hidden[:, agent_num, :], _,  self.policy.i_eval_hidden[:, agent_num, :], imt = self.policy.eval_rnn(inputs, hidden_state, hidden_state_i)
+        elif self.args.alg !='mabcqt':
             q_value, self.policy.eval_hidden[:, agent_num, :] = self.policy.eval_rnn(inputs, hidden_state)
+        else:
+            inputs = inputs.unsqueeze(dim=1)
+            q_value, _, imt = self.policy.eval_rnn(inputs)
+            q_value = q_value.squeeze(dim=1)
+            imt = imt.squeeze(dim=1)
 
         # choose action from q value
         q_value[avail_actions == 0.0] = -999999
@@ -84,11 +93,11 @@ class Agents:
             action = np.random.choice(avail_actions_ind)  # action是一个整数
         elif np.random.uniform() < epsilon:
             action = np.random.choice(avail_actions_ind)  # action是一个整数
-        elif self.args.alg=='mabcq':
+        elif self.args.alg=='mabcq' or self.args.alg=='mabcqt':
             with torch.no_grad():
                 imt = imt.exp()
                 # imt[avail_actions == 0.0] = - float("inf")
-                imt[avail_actions == 0.0] = -999999
+                # imt[avail_actions == 0.0] = -999999
                 # print(imt)
                 imt = (imt/imt.max(1, keepdim=True)[0] > self.args.BCQ_threshold).float()
                 # print(imt)

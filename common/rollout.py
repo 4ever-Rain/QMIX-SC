@@ -30,7 +30,8 @@ class RolloutWorker:
         step = 0
         episode_reward = 0  # cumulative rewards
         last_action = np.zeros((self.args.n_agents, self.args.n_actions))
-        self.agents.policy.init_hidden(1)
+        if self.args.alg !='mabcqt':
+            self.agents.policy.init_hidden(1)
 
         # epsilon
         epsilon = 0 if evaluate else self.epsilon
