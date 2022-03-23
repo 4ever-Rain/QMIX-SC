@@ -24,8 +24,8 @@ class MABCQ:
         # 神经网络
         self.eval_rnn = BCRNN(input_shape, args)  # 每个agent选动作的网络
         self.target_rnn = BCRNN(input_shape, args)
-        self.eval_qmix_net = MAQMixNet(args)  # 把agentsQ值加起来的网络
-        self.target_qmix_net = MAQMixNet(args)
+        self.eval_qmix_net = QMixNet(args)  # 把agentsQ值加起来的网络
+        self.target_qmix_net = QMixNet(args)
         self.args = args
         if self.args.cuda:
             self.eval_rnn.cuda()
@@ -108,25 +108,15 @@ class MABCQ:
         # 得到target_q
         # TODO：把这里的target使用imt进行计算 需要对动作状态加mask，第一行是对不合法动作加了mask 需要再加一行对于没有达到阈值要求的动作加mask
         with torch.no_grad():
-            ## new
-            epsilon = torch.ones_like(imt.max(-1, keepdim=True)[0]) * 0.0001
-            imt = imt.exp()
-            imt = (imt/imt.max(-1, keepdim=True)[0] + epsilon > 0.9).float()
-
-            next_action = (imt * q_evals + (1 - imt) * -1e8)
-            next_action[avail_u_next == 0.0] = -9999999
-            next_action = next_action.argmax(-1, keepdim=True)
-            q_targets = torch.gather(q_targets, dim=3, index=next_action).squeeze(3)
-
 
             # q_evals[avail_u_next == 0.0] = - 9999999
-            # imt = imt.exp()
-            # imt[avail_u_next == 0.0] = - 9999999
-            # imt = (imt/imt.max(3, keepdim=True)[0] > self.threshold).float()
+            imt = imt.exp()
+            imt[avail_u_next == 0.0] = - 9999999
+            imt = (imt/imt.max(3, keepdim=True)[0] > self.threshold).float()
 
             # # Use large negative number to mask actions from argmax
-            # next_action = (imt * q_evals + (1 - imt) * -1e8).argmax(3, keepdim=True)
-            # q_targets = torch.gather(q_targets, dim=3, index=next_action).squeeze(3)
+            next_action = (imt * q_evals + (1 - imt) * -1e8).argmax(3, keepdim=True)
+            q_targets = torch.gather(q_targets, dim=3, index=next_action).squeeze(3)
 
             
         # 取每个agent动作对应的Q值，并且把最后不需要的一维去掉，因为最后一维只有一个值了
